@@ -185,4 +185,4 @@ main().catch((err) => {
   process.exit(1);
 });
 
-export { searchWebDuckDuckGo, fetchPageReadable, validateUrl, isPrivateIp };
+export { searchWebDuckDuckGo, fetchPageReadable, validateUrl, isPrivateIp, normalizeDuckLink, fetchWithLimit };
