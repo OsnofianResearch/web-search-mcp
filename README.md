@@ -2,6 +2,23 @@
 
 Security-hardened fork of [guhcostan/web-search-mcp](https://github.com/guhcostan/web-search-mcp). Minimal MCP server that can search the web and extract readable page content.
 
+### Add to LM Studio
+
+<a href="https://lmstudio.ai/install-mcp?name=web-search-mcp&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIkBhc2RydWJhbGluYXNteXRoL3dlYi1zZWFyY2gtbWNwQGxhdGVzdCJdfQ%3D%3D"><img src="https://files.lmstudio.ai/deeplink/mcp-install-light.svg" alt="Add MCP Server web-search-mcp to LM Studio" /></a>
+
+Or add manually in LM Studio → Settings → MCP Servers:
+
+```json
+{
+  "mcpServers": {
+    "web-search-mcp": {
+      "command": "npx",
+      "args": ["-y", "@asdrubalinasmyth/web-search-mcp@latest"]
+    }
+  }
+}
+```
+
 ### Features
 
 - **search_web**: Query the web (DuckDuckGo HTML) and return result URLs and titles
@@ -126,4 +143,3 @@ npm test
 ### License
 
 MIT
-
