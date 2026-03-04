@@ -1,6 +1,11 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { MockAgent, setGlobalDispatcher } from 'undici';
-import { fetchPageReadable, searchWebDuckDuckGo } from '../src/server.js';
+import { fetchPageReadable, searchWebDuckDuckGo, validateUrl, isPrivateIp } from '../src/server.js';
+
+// Mock dns/promises so tests don't need real network DNS resolution
+vi.mock('node:dns/promises', () => ({
+  lookup: vi.fn().mockResolvedValue([{ address: '93.184.216.34', family: 4 }])
+}));
 
 describe('web-search-mcp tools', () => {
   const mockAgent = new MockAgent();
@@ -68,6 +73,74 @@ describe('web-search-mcp tools', () => {
     expect(result.content.length).toBeGreaterThan(0);
     expect(result.content.length).toBeLessThanOrEqual(200_000);
     expect(Date.now() - start).toBeLessThan(6000);
+  });
+});
+
+describe('isPrivateIp', () => {
+  it('returns true for loopback IPv4', () => {
+    expect(isPrivateIp('127.0.0.1')).toBe(true);
+  });
+
+  it('returns true for private 10.x', () => {
+    expect(isPrivateIp('10.0.0.1')).toBe(true);
+  });
+
+  it('returns true for private 172.16-31.x', () => {
+    expect(isPrivateIp('172.16.0.1')).toBe(true);
+    expect(isPrivateIp('172.31.255.255')).toBe(true);
+    expect(isPrivateIp('172.32.0.1')).toBe(false);
+  });
+
+  it('returns true for private 192.168.x', () => {
+    expect(isPrivateIp('192.168.1.1')).toBe(true);
+  });
+
+  it('returns true for link-local 169.254.x', () => {
+    expect(isPrivateIp('169.254.169.254')).toBe(true);
+  });
+
+  it('returns true for IPv6 loopback', () => {
+    expect(isPrivateIp('::1')).toBe(true);
+  });
+
+  it('returns true for IPv6 ULA fc00:', () => {
+    expect(isPrivateIp('fc00::1')).toBe(true);
+  });
+
+  it('returns true for IPv6 ULA fd00:', () => {
+    expect(isPrivateIp('fd00::1')).toBe(true);
+  });
+
+  it('returns true for IPv4-mapped IPv6 ::ffff:', () => {
+    expect(isPrivateIp('::ffff:192.168.1.1')).toBe(true);
+    expect(isPrivateIp('::ffff:10.0.0.1')).toBe(true);
+  });
+
+  it('returns true for IPv6 link-local fe80:', () => {
+    expect(isPrivateIp('fe80::1')).toBe(true);
+  });
+
+  it('returns false for public IPs', () => {
+    expect(isPrivateIp('93.184.216.34')).toBe(false);
+    expect(isPrivateIp('8.8.8.8')).toBe(false);
+  });
+});
+
+describe('validateUrl', () => {
+  it('throws for non-https URLs', async () => {
+    await expect(validateUrl('http://example.com')).rejects.toThrow('Only https:');
+  });
+
+  it('throws for private IP resolved by DNS', async () => {
+    const { lookup } = await import('node:dns/promises');
+    vi.mocked(lookup).mockResolvedValueOnce([{ address: '192.168.1.1', family: 4 }] as never);
+    await expect(validateUrl('https://internal.example.com')).rejects.toThrow(
+      'private/internal'
+    );
+  });
+
+  it('allows valid https URL resolving to public IP', async () => {
+    await expect(validateUrl('https://example.com')).resolves.toBeUndefined();
   });
 });
 

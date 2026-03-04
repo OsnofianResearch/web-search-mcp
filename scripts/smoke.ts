@@ -8,7 +8,11 @@ async function run(): Promise<void> {
   const transport = new StdioClientTransport({
     command: serverCmd,
     args: serverArgs,
-    env: process.env,
+    env: {
+      PATH: process.env.PATH,
+      HOME: process.env.HOME,
+      NODE_ENV: process.env.NODE_ENV ?? 'smoke',
+    },
     cwd: process.cwd()
   })
 

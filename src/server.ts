@@ -1,9 +1,9 @@
 #!/usr/bin/env node
-import 'dotenv/config';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 import { fetch as undiciFetch } from 'undici';
+import { lookup as dnsLookup } from 'node:dns/promises';
 import { JSDOM } from 'jsdom';
 import { Readability } from '@mozilla/readability';
 
@@ -12,6 +12,32 @@ type SearchResult = {
   title?: string;
   snippet?: string;
 };
+
+function isPrivateIp(ip: string): boolean {
+  const privateRanges = [
+    /^127\./,
+    /^10\./,
+    /^172\.(1[6-9]|2\d|3[01])\./,
+    /^192\.168\./,
+    /^169\.254\./,
+    /^::1$/,
+    /^::ffff:/i,
+    /^f[cd][0-9a-f]{2}:/i,
+    /^fe80:/i,
+  ];
+  return privateRanges.some(r => r.test(ip));
+}
+
+async function validateUrl(rawUrl: string): Promise<void> {
+  const u = new URL(rawUrl);
+  if (u.protocol !== 'https:') {
+    throw new Error(`Only https: URLs are allowed, got: ${u.protocol}`);
+  }
+  const addresses = await dnsLookup(u.hostname, { all: true });
+  if (addresses.some(({ address }) => isPrivateIp(address))) {
+    throw new Error(`Requests to private/internal addresses are not allowed`);
+  }
+}
 
 function normalizeDuckLink(rawHref: string): string {
   const href = rawHref.startsWith('//') ? `https:${rawHref}` : rawHref;
@@ -32,7 +58,7 @@ async function searchWebDuckDuckGo(query: string, limit: number): Promise<Search
   const params = new URLSearchParams({ q: query });
   const res = await undiciFetch(`https://duckduckgo.com/html?${params.toString()}`, {
     headers: {
-      'User-Agent': 'Mozilla/5.0 (compatible; WebSearchMCP/1.0; +https://example.com)'
+      'User-Agent': 'Mozilla/5.0 (compatible; WebSearchMCP/1.0; +https://github.com/OsnofianResearch/web-search-mcp)'
     }
   });
   const html = await res.text();
@@ -54,7 +80,7 @@ async function fetchWithLimit(url: string, timeoutMs: number, maxBytes: number):
   try {
     const res = await undiciFetch(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; WebSearchMCP/1.0; +https://example.com)'
+        'User-Agent': 'Mozilla/5.0 (compatible; WebSearchMCP/1.0; +https://github.com/OsnofianResearch/web-search-mcp)'
       },
       signal: controller.signal
     });
@@ -94,6 +120,7 @@ async function fetchPageReadable(
   url: string,
   opts?: { timeoutMs?: number; maxBytes?: number }
 ): Promise<{ content: string; title?: string }>{
+  await validateUrl(url);
   const timeoutMs = opts?.timeoutMs ?? 15000;
   const maxBytes = opts?.maxBytes ?? 1_500_000;
   const html = await fetchWithLimit(url, timeoutMs, maxBytes);
@@ -131,7 +158,7 @@ async function main(): Promise<void> {
   server.tool(
     'fetch_page',
     'Fetch a page and extract its readable content and title using Readability.',
-    { url: z.string().url() },
+    { url: z.string().url().refine(u => u.startsWith('https://'), { message: 'Only https:// URLs are allowed' }) },
     async (args) => {
       try {
         const { content, title } = await fetchPageReadable(args.url);
@@ -158,4 +185,4 @@ main().catch((err) => {
   process.exit(1);
 });
 
-export { searchWebDuckDuckGo, fetchPageReadable };
+export { searchWebDuckDuckGo, fetchPageReadable, validateUrl, isPrivateIp };
