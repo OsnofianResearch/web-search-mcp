@@ -1,5 +1,5 @@
 {
-  "name": "@guhcostan/web-search-mcp",
+  "name": "@osnofianresearch/web-search-mcp",
   "version": "1.0.5",
   "type": "module",
   "description": "MCP server to search the web and fetch page contents",
@@ -29,12 +29,12 @@
   "prepare": "npm run build",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/guhcostan/web-search-mcp.git"
+    "url": "git+https://github.com/OsnofianResearch/web-search-mcp.git"
   },
   "bugs": {
-    "url": "https://github.com/guhcostan/web-search-mcp/issues"
+    "url": "https://github.com/OsnofianResearch/web-search-mcp/issues"
   },
-  "homepage": "https://github.com/guhcostan/web-search-mcp#readme",
+  "homepage": "https://github.com/OsnofianResearch/web-search-mcp#readme",
   "keywords": [
     "mcp",
     "modelcontextprotocol",
