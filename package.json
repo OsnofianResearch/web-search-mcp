@@ -1,6 +1,6 @@
 {
   "name": "@asdrubalinasmyth/web-search-mcp",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "type": "module",
   "description": "MCP server to search the web and fetch page contents",
   "bin": {
