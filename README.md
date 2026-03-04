@@ -1,6 +1,6 @@
 ## Web Search MCP
 
-Minimal MCP server that can search the web and extract readable page content, similar to Cursor's built-in web context.
+Security-hardened fork of [guhcostan/web-search-mcp](https://github.com/guhcostan/web-search-mcp). Minimal MCP server that can search the web and extract readable page content.
 
 ### Features
 
@@ -26,14 +26,16 @@ npm start
 ### Install globally
 
 ```bash
-npm i -g @guhcostan/web-search-mcp
+npm i -g @asdrubalinasmyth/web-search-mcp
 ```
 
 Then reference the binary `web-search-mcp`.
 
-### Integrate with Cursor (MCP)
+### Integrate with MCP clients
 
-Add to your Cursor MCP settings:
+#### Cursor
+
+Add to your Cursor MCP settings (`~/.cursor/mcp.json`):
 
 ```json
 {
@@ -43,14 +45,44 @@ Add to your Cursor MCP settings:
 }
 ```
 
-Alternatively, without global install, use npx:
+Without global install, use npx:
 
 ```json
 {
   "mcpServers": {
     "web-search-mcp": {
       "command": "npx",
-      "args": ["-y", "@guhcostan/web-search-mcp@latest"]
+      "args": ["-y", "@asdrubalinasmyth/web-search-mcp@latest"]
+    }
+  }
+}
+```
+
+#### LM Studio
+
+In LM Studio → Settings → MCP Servers, add:
+
+```json
+{
+  "mcpServers": {
+    "web-search-mcp": {
+      "command": "npx",
+      "args": ["-y", "@asdrubalinasmyth/web-search-mcp@latest"]
+    }
+  }
+}
+```
+
+#### Claude Desktop
+
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
+
+```json
+{
+  "mcpServers": {
+    "web-search-mcp": {
+      "command": "npx",
+      "args": ["-y", "@asdrubalinasmyth/web-search-mcp@latest"]
     }
   }
 }
@@ -89,6 +121,7 @@ npm test
 
 - Web search uses DuckDuckGo HTML; results may vary and are HTML-scraped (no API key required)
 - Be mindful of target site terms of use and robots policies when fetching pages
+- `fetch_page` only accepts `https://` URLs and blocks requests to private/internal IP ranges (SSRF protection)
 
 ### License
 
